@@ -73,7 +73,7 @@ router.post('/add-page', function (req, res) {
             content: content
         });
     } else {
-        Page.findOne({ slug: slug }, function (err, page) {
+        Page.findOne({slug: slug}, function (err, page) {
             if (page) {
                 req.flash('danger', 'Page slug exists, choose another.');
                 res.render('admin/add_page', {
@@ -93,7 +93,7 @@ router.post('/add-page', function (req, res) {
                     if (err)
                         return console.log(err);
 
-                    Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
+                    Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
                         if (err) {
                             console.log(err);
                         } else {
@@ -130,48 +130,51 @@ router.get('/', async function (req, res) {
     });
 });
 
-//post reorder pages
-
-var bodyParser = require('body-parser');
-var app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-router.post('/reorder-pages', async function (req, res) {
-    var ids = req.body['id[]'];
+// Sort pages function
+function sortPages(ids, callback) {
     var count = 0;
 
-    if (ids && Array.isArray(ids)) {
-        for (var i = 0; i < ids.length; i++) {
-            var id = ids[i];
-            count++;
+    for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        count++;
 
+        (function (count) {
+            Page.findById(id, function (err, page) {
+                page.sorting = count;
+                page.save(function (err) {
+                    if (err)
+                        return console.log(err);
+                    ++count;
+                    if (count >= ids.length) {
+                        callback();
+                    }
+                });
+            });
+        })(count);
 
-
-            (function (count) {
-                Page.findOne({ _id: id }).exec()
-                    .then((page) => {
-                        if (!page) {
-                            return console.log('Page not found');
-                        }
-                        console.log('Page retrieved:', page);
-                        page.sorting = count;
-                        return page.save();
-                    })
-                    .then(() => {
-                        console.log('Page saved successfully');
-                    })
-                    .catch((err) => {
-                        console.log(err);
-                    });
-            })(count);
-        }
-
-        // Retrieve the updated pages after reordering
-        const updatedPages = await Page.find({}).sort({ sorting: 1 }).exec();
-        console.log('Updated pages:', updatedPages);
-
-        res.redirect('/admin/pages');
     }
+}
+
+/*
+ * POST reorder pages
+ */
+router.post('/reorder-pages', function (req, res) {
+    var ids = req.body['id[]'];
+
+    sortPages(ids, function () {
+        Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
+            if (err) {
+                console.log(err);
+            } else {
+                req.app.locals.pages = pages;
+            }
+        });
+    });
+
 });
+
+
+
 //get edit page
 router.get('/edit-page/:id', async function (req, res) {
     try {
@@ -190,7 +193,9 @@ router.get('/edit-page/:id', async function (req, res) {
 //exports
 module.exports = router;
 
-//POST edit page
+/*
+ * POST edit page
+ */
 router.post('/edit-page/:id', function (req, res) {
 
     req.checkBody('title', 'Title must have a value.').notEmpty();
@@ -214,7 +219,7 @@ router.post('/edit-page/:id', function (req, res) {
             id: id
         });
     } else {
-        Page.findOne({ slug: slug, _id: { '$ne': id } }, function (err, page) {
+        Page.findOne({slug: slug, _id: {'$ne': id}}, function (err, page) {
             if (page) {
                 req.flash('danger', 'Page slug exists, choose another.');
                 res.render('admin/edit_page', {
@@ -237,7 +242,7 @@ router.post('/edit-page/:id', function (req, res) {
                         if (err)
                             return console.log(err);
 
-                        Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
+                        Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
                             if (err) {
                                 console.log(err);
                             } else {
@@ -266,11 +271,24 @@ router.get('/delete-page/:id', async function (req, res) {
     try {
         await Page.findByIdAndDelete(req.params.id);
         req.flash('success', 'Page deleted!!!');
+
+        // Retrieve the updated pages after deletion
+        const updatedPages = await Page.find({}).sort({ sorting: 1 }).exec();
+        req.app.locals.pages = updatedPages;
+
         res.redirect('/admin/pages/');
     } catch (err) {
         console.log(err);
+        Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
+            if (err) {
+                console.log(err);
+            } else {
+                req.app.locals.pages = pages;
+            }
+        });
     }
 });
+
 
 module.exports = router;
 
