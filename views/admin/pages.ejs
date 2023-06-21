@@ -1,0 +1,69 @@
+<%- include('../_layout/adminheader') %>
+
+    <h2 class="page-title">Pages</h2>
+    <a href="/admin/pages/add-page" class="btn btn-primary">Add a new Page</a>
+    <br><br>
+
+    <table class="table table-striped sorting">
+        <thead>
+            <tr class="home">
+                <th>Title</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        <tbody>
+        <tbody>
+            <% pages.forEach(function (page) { %>
+
+                <tr id="id_<%=page._id %>" class="<%=page.slug %>">
+                    <td>
+                        <%= page.title %>
+                    </td>
+                    <td>
+                        <a href="/admin/pages/edit-page/<%= page._id %>">Edit</a>
+                    </td>
+                    <% if (page.slug=="home" ) { %>
+                        <td></td>
+                        <% } else { %>
+                            <td>
+                                <a class="confirmDeletion" href="/admin/pages/delete-page/<%= page._id %>">Delete</a>
+                            </td>
+                            <% } %>
+                </tr>
+                <% }); %>
+        </tbody>
+        </tbody>
+    </table>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+    <script>
+
+        $('tbody').sortable({
+            items: "tr:not('.home')",
+            placeholder: "ui-state-highlight",
+            update: function () {
+                var ids = [];
+                $('tbody tr:not(.home)').each(function () {
+                    var id = $(this).attr('id').split('_')[1];
+                    ids.push(id);
+                });
+
+                var url = "/admin/pages/reorder-pages";
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: { 'id[]': ids },
+                    success: function (response) {
+                        console.log('Reordering successful:', response);
+                        // Perform any additional actions or UI updates as needed
+                    },
+                    error: function (err) {
+                        console.log('Error:', err);
+                        // Handle the error case if necessary
+                    }
+                });
+            }
+        });
+    </script>
+
+
+    <%- include('../_layout/adminfooter') %>
