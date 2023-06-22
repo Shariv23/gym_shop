@@ -30,6 +30,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 //set global errors variable
 app.locals.errors = null;
 
+
 //Express fileUpload middleware
 app.use(fileUpload());
 
