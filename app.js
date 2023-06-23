@@ -42,7 +42,6 @@ Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
     }
 });
 
-
 //Express fileUpload middleware
 app.use(fileUpload());
 
