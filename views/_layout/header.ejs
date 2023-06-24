@@ -43,6 +43,21 @@
 
 
                 </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                    <li>
+                        <a href="/cart/checkout">My Cart (
+                            <% if (typeof cart !=="undefined" ) { %>
+                                <%= cart.length %>
+                                    <% } else {%>
+                                        0
+                                        <% } %>
+                                            )
+                        </a>
+                    </li>
+                    </li>
+
+                </ul>
             </div><!--/.nav-collapse -->
         </div>
     </nav>

@@ -118,6 +118,12 @@ app.use(function (req, res, next) {
     next();
 });
 
+app.get('*', function (req, res, next) {
+    res.locals.cart = req.session.cart;
+    next();
+});
+
+
 
 // set route
 var pages = require('./routes/pages');
@@ -125,13 +131,15 @@ var adminPages = require('./routes/admin_pages');
 var adminCategories = require('./routes/admin_categories');
 var adminProducts = require('./routes/admin_products.js');
 var products = require('./routes/products.js');
-
+var cart = require('./routes/cart.js');
 
 app.use('/products', products);
 app.use('/admin/pages', adminPages);
 app.use('/admin/categories', adminCategories);
 app.use('/admin/products', adminProducts);
 app.use('/', pages);
+app.use('/cart', cart);
+
 
 // Start the server
 var port = 3000;
