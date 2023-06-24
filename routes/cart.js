@@ -62,13 +62,60 @@ router.get('/add/:product', function (req, res) {
  */
 router.get('/checkout', function (req, res) {
 
+    if (req.session.cart && req.session.cart.length == 0) {
+        //if cart is not empty
+        delete req.session.cart;
+        res.redirect('/cart/checkout');
+    } else {
+        //if cart is empty
+        res.render('checkout', {
+            title: 'Checkout',
+            cart: req.session.cart
+        });
 
-    res.render('checkout', {
-        title: 'Checkout',
-        cart: req.session.cart
-    });
+    }
+});
 
+/*
+ * GET update product
+ */
+router.get('/update/:product', function (req, res) {
+    var slug = req.params.product;
+    var cart = req.session.cart;
+    var action = req.query.action;
 
+    if (cart && Array.isArray(cart)) {  // Check if cart is defined and an array
+        for (var i = 0; i < cart.length; i++) {
+            if (cart[i].title == slug) {
+                switch (action) {
+                    case "add":
+                        cart[i].qty++;
+                        break;
+                    case "remove":
+                        cart[i].qty--;
+
+                        if (cart[i].qty == 0) {
+                            cart.splice(i, 1);
+                        }
+                        break;
+
+                    case "clear":
+                        cart.splice(i, 1);
+                        if (cart.length == 0) {
+                            delete req.session.cart;
+                        }
+                        break;
+                    default:
+                        console.log('update problem');
+                        break;
+                }
+                break;
+            }
+        }
+    }
+
+    req.flash('success', 'Cart Updated!');
+    res.redirect('/cart/checkout');
 });
 
 
