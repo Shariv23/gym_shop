@@ -60,4 +60,15 @@
             <h3 class="text-center">Your cart is empty.</h3>
             <% } %>
 
+                <script>
+
+                    $(function () {
+
+                        $('a.clearcart').on('click', function () {
+                            if (!confirm('Confirm clear cart'))
+                                return false;
+                        });
+                    });
+                </script>
+
                 <%- include('./_layout/footer') %>
