@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
-
+var fs = require('fs-extra');
 
 
 // Get Product model
@@ -52,6 +51,38 @@ router.get('/:category', function (req, res) {
 
 
 
+/*
+ * GET product details
+ */
+router.get('/:category/:product', function (req, res) {
+
+    var galleryImages = null;
+
+
+    Product.findOne({ slug: req.params.product }, function (err, product) {
+        if (err) {
+            console.log(err);
+        } else {
+            var galleryDir = 'public/product_images/' + product._id + '/gallery';
+
+            fs.readdir(galleryDir, function (err, files) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    galleryImages = files;
+
+                    res.render('product', {
+                        title: product.title,
+                        p: product,
+                        galleryImages: galleryImages
+
+                    });
+                }
+            });
+        }
+    });
+
+});
 
 // Exports
 module.exports = router;
