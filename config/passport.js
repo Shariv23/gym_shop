@@ -6,12 +6,12 @@ module.exports = function (passport) {
 
     passport.use(new LocalStrategy(function (username, password, done) {
 
-        User.findOne({username: username}, function (err, user) {
+        User.findOne({ username: username }, function (err, user) {
             if (err)
                 console.log(err);
 
             if (!user) {
-                return done(null, false, {message: 'No user found!'});
+                return done(null, false, { message: 'No user found!' });
             }
 
             bcrypt.compare(password, user.password, function (err, isMatch) {
@@ -21,7 +21,7 @@ module.exports = function (passport) {
                 if (isMatch) {
                     return done(null, user);
                 } else {
-                    return done(null, false, {message: 'Wrong password.'});
+                    return done(null, false, { message: 'Wrong password.' });
                 }
             });
         });
