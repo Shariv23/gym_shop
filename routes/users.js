@@ -112,12 +112,13 @@ router.post('/login', function (req, res, next) {
  * GET logout
  */
 router.get('/logout', function (req, res) {
-
-    req.logout();
-
-    req.flash('success', 'You are logged out!');
-    res.redirect('/users/login');
-
+    req.logout(function (err) {
+        if (err) {
+            console.error(err);
+        }
+        req.flash('success', 'You are logged out!');
+        res.redirect('/users/login');
+    });
 });
 
 // Exports
