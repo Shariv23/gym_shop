@@ -1,68 +1,62 @@
-express = require('express');
+var express = require('express');
 var router = express.Router();
-const { mkdirp } = require('mkdirp')
+var mkdirp = require('mkdirp');
 var fs = require('fs-extra');
 var resizeImg = require('resize-img');
+var auth = require('../config/auth');
+var isAdmin = auth.isAdmin;
 
-module.exports = function (app) {
-
-    app.get('/', function (req, res) {
-        res.render('admin_products', {
-            title: 'Admin Products'
-        });
-    });
-
-};
-
-//Get Product model
+// Get Product model
 var Product = require('../models/product');
 
-//Get Category model
+// Get Category model
 var Category = require('../models/category');
 
-//get products index
+/*
+ * GET products index
+ */
+router.get('/', isAdmin, function (req, res) {
+    var count;
 
-router.get('/', async function (req, res) {
-    try {
-        const count = await Product.countDocuments().exec();
-        const products = await Product.find().exec();
+    Product.count(function (err, c) {
+        count = c;
+    });
 
+    Product.find(function (err, products) {
         res.render('admin/products', {
             products: products,
             count: count
         });
-    } catch (err) {
-        console.log(err);
-        res.redirect('/');
-    }
+    });
 });
 
+/*
+ * GET add product
+ */
+router.get('/add-product', isAdmin, function (req, res) {
 
+    var title = "";
+    var desc = "";
+    var price = "";
 
-
-router.get('/add-product', async function (req, res) {
-    try {
-        var title = "";
-        var desc = "";
-        var price = "";
-        var categories = await Category.find();
-
+    Category.find(function (err, categories) {
         res.render('admin/add_product', {
             title: title,
             desc: desc,
             categories: categories,
             price: price
         });
-    } catch (err) {
-        console.log(err);
-    }
+    });
+
+
 });
-// post add product
 
-
+/*
+ * POST add product
+ */
 router.post('/add-product', function (req, res) {
 
-    var imageFile = req.files && req.files.image ? req.files.image.name : "";
+    var imageFile = typeof req.files.image !== "undefined" ? req.files.image.name : "";
 
     req.checkBody('title', 'Title must have a value.').notEmpty();
     req.checkBody('desc', 'Description must have a value.').notEmpty();
@@ -88,138 +82,68 @@ router.post('/add-product', function (req, res) {
             });
         });
     } else {
-        Product.findOne({ slug: slug })
-            .then((product) => {
-                if (product) {
-                    req.flash('danger', 'Product title exists, choose another.');
-                    Category.find()
-                        .then((categories) => {
-                            res.render('admin/add_product', {
-                                title: title,
-                                desc: desc,
-                                categories: categories,
-                                price: price
-                            });
-                        })
-                        .catch((err) => {
-                            console.error('Error finding categories:', err);
-                            res.redirect('/admin/products');
-                        });
-                }
-
-                else {
-
-                    var price2 = parseFloat(price).toFixed(2);
-
-                    var product = new Product({
+        Product.findOne({ slug: slug }, function (err, product) {
+            if (product) {
+                req.flash('danger', 'Product title exists, choose another.');
+                Category.find(function (err, categories) {
+                    res.render('admin/add_product', {
                         title: title,
-                        slug: slug,
                         desc: desc,
-                        price: price2,
-                        category: category,
-                        image: imageFile
+                        categories: categories,
+                        price: price
+                    });
+                });
+            } else {
+
+                var price2 = parseFloat(price).toFixed(2);
+
+                var product = new Product({
+                    title: title,
+                    slug: slug,
+                    desc: desc,
+                    price: price2,
+                    category: category,
+                    image: imageFile
+                });
+
+                product.save(function (err) {
+                    if (err)
+                        return console.log(err);
+
+                    mkdirp('public/product_images/' + product._id, function (err) {
+                        return console.log(err);
                     });
 
-                    product.save(function (err) {
-                        if (err)
-                            return console.log(err);
-
-                        mkdirp('public/product_images/' + product._id, function (err) {
-                            return console.log(err);
-                        });
-
-                        mkdirp('public/product_images/' + product._id + '/gallery', function (err) {
-                            return console.log(err);
-                        });
-
-                        mkdirp('public/product_images/' + product._id + '/gallery/thumbs', function (err) {
-                            return console.log(err);
-                        });
-
-                        if (imageFile != "") {
-                            var productImage = req.files.image;
-                            var path = 'public/product_images/' + product._id + '/' + imageFile;
-
-                            productImage.mv(path, function (err) {
-                                return console.log(err);
-                            });
-                        }
-
-                        req.flash('success', 'Product added!');
-                        res.redirect('/admin/products');
+                    mkdirp('public/product_images/' + product._id + '/gallery', function (err) {
+                        return console.log(err);
                     });
-                }
-            });
+
+                    mkdirp('public/product_images/' + product._id + '/gallery/thumbs', function (err) {
+                        return console.log(err);
+                    });
+
+                    if (imageFile != "") {
+                        var productImage = req.files.image;
+                        var path = 'public/product_images/' + product._id + '/' + imageFile;
+
+                        productImage.mv(path, function (err) {
+                            return console.log(err);
+                        });
+                    }
+
+                    req.flash('success', 'Product added!');
+                    res.redirect('/admin/products');
+                });
+            }
+        });
     }
 
 });
 
-
-
-router.get('/', async function (req, res) {
-    const pages = await Page.find({}).sort({ sorting: 1 }).exec();
-
-    // Find the index of the "Home" page in the array
-    const homePageIndex = pages.findIndex(page => page.slug === 'home');
-
-    // If "Home" page is found, assign it a lower sort value
-    if (homePageIndex !== -1) {
-        pages[homePageIndex].sorting = 0;
-        await pages[homePageIndex].save();
-    }
-
-    // Sort the pages again based on the updated sorting values
-    const sortedPages = await Page.find({}).sort({ sorting: 1 }).exec();
-
-    res.render('admin/pages', {
-        pages: sortedPages,
-    });
-});
-
-//post reorder pages
-
-var bodyParser = require('body-parser');
-var app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-router.post('/reorder-pages', async function (req, res) {
-    var ids = req.body['id[]'];
-    var count = 0;
-
-    if (ids && Array.isArray(ids)) {
-        for (var i = 0; i < ids.length; i++) {
-            var id = ids[i];
-            count++;
-
-
-
-            (function (count) {
-                Page.findOne({ _id: id }).exec()
-                    .then((page) => {
-                        if (!page) {
-                            return console.log('Page not found');
-                        }
-                        console.log('Page retrieved:', page);
-                        page.sorting = count;
-                        return page.save();
-                    })
-                    .then(() => {
-                        console.log('Page saved successfully');
-                    })
-                    .catch((err) => {
-                        console.log(err);
-                    });
-            })(count);
-        }
-
-        // Retrieve the updated pages after reordering
-        const updatedPages = await Page.find({}).sort({ sorting: 1 }).exec();
-        console.log('Updated pages:', updatedPages);
-
-        res.redirect('/admin/pages');
-    }
-});
-//get edit product
-router.get('/edit-product/:id', function (req, res) {
+/*
+ * GET edit product
+ */
+router.get('/edit-product/:id', isAdmin, function (req, res) {
 
     var errors;
 
@@ -263,14 +187,12 @@ router.get('/edit-product/:id', function (req, res) {
 
 });
 
-
-//exports
-module.exports = router;
-
+/*
+ * POST edit product
+ */
 router.post('/edit-product/:id', function (req, res) {
 
-    var imageFile = req.files && req.files.image ? req.files.image.name : "";
-
+    var imageFile = typeof req.files.image !== "undefined" ? req.files.image.name : "";
 
     req.checkBody('title', 'Title must have a value.').notEmpty();
     req.checkBody('desc', 'Description must have a value.').notEmpty();
@@ -344,20 +266,9 @@ router.post('/edit-product/:id', function (req, res) {
 
 });
 
-//get delete index
-
-router.get('/delete-page/:id', async function (req, res) {
-    try {
-        await Page.findByIdAndDelete(req.params.id);
-        req.flash('success', 'Page deleted!!!');
-        res.redirect('/admin/pages/');
-    } catch (err) {
-        console.log(err);
-    }
-});
-
-// POST product gallery
-
+/*
+ * POST product gallery
+ */
 router.post('/product-gallery/:id', function (req, res) {
 
     var productImage = req.files.file;
@@ -377,9 +288,11 @@ router.post('/product-gallery/:id', function (req, res) {
     res.sendStatus(200);
 
 });
-// GET delete image
 
-router.get('/delete-image/:image', function (req, res) {
+/*
+ * GET delete image
+ */
+router.get('/delete-image/:image', isAdmin, function (req, res) {
 
     var originalImage = 'public/product_images/' + req.query.id + '/gallery/' + req.params.image;
     var thumbImage = 'public/product_images/' + req.query.id + '/gallery/thumbs/' + req.params.image;
@@ -400,9 +313,10 @@ router.get('/delete-image/:image', function (req, res) {
     });
 });
 
-//GET delete product
-
-router.get('/delete-product/:id', function (req, res) {
+/*
+ * GET delete product
+ */
+router.get('/delete-product/:id', isAdmin, function (req, res) {
 
     var id = req.params.id;
     var path = 'public/product_images/' + id;
@@ -421,27 +335,6 @@ router.get('/delete-product/:id', function (req, res) {
     });
 
 });
-// get add product
-router.get('/add-product', async function (req, res) {
-    try {
-        var title = "";
-        var desc = "";
-        var price = "";
-        var categories = await Category.find();
 
-        res.render('admin/add_product', {
-            title: title,
-            desc: desc,
-            categories: categories,
-            price: price
-        });
-    } catch (err) {
-        console.log(err);
-    }
-});
-
-
-
-
+// Exports
 module.exports = router;
-

@@ -1,33 +1,37 @@
 express = require('express');
 var router = express.Router();
+var auth = require('../config/auth');
+var isAdmin = auth.isAdmin;
 
-const category = require('../models/category');
-//Get Category model
+
 var Category = require('../models/category');
 
-//get category index
-
-router.get('/', async function (req, res) {
-    try {
-        const categories = await Category.find();
+/*
+ * GET category index
+ */
+router.get('/', isAdmin, function (req, res) {
+    Category.find(function (err, categories) {
+        if (err)
+            return console.log(err);
         res.render('admin/categories', {
             categories: categories
         });
-    } catch (err) {
-        console.log(err);
-    }
+    });
 });
 
+/*
+ * GET add category
+ */
+router.get('/add-category', isAdmin, function (req, res) {
 
-//get add category
-router.get('/add-category', function (req, res) {
     var title = "";
 
     res.render('admin/add_category', {
         title: title
-
     });
+
 });
+
 /// post add category
 router.post('/add-category', function (req, res) {
 
@@ -85,19 +89,23 @@ router.post('/add-category', function (req, res) {
 
 });
 
-//get edit category
-router.get('/edit-category/:id', async function (req, res) {
-    try {
-        const category = await Category.findById(req.params.id).exec();
+/*
+ * GET edit category
+ */
+router.get('/edit-category/:id', isAdmin, function (req, res) {
+
+    Category.findById(req.params.id, function (err, category) {
+        if (err)
+            return console.log(err);
 
         res.render('admin/edit_category', {
             title: category.title,
-            id: category._id,
+            id: category._id
         });
-    } catch (err) {
-        console.log(err);
-    }
+    });
+
 });
+
 //exports
 module.exports = router;
 
@@ -168,11 +176,15 @@ router.post('/edit-category/:id', function (req, res) {
 });
 
 
-//get delete category
 
-router.get('/delete-category/:id', async function (req, res) {
-    try {
-        await Category.findByIdAndDelete(req.params.id);
+/*
+ * GET delete category
+ */
+router.get('/delete-category/:id', isAdmin, function (req, res) {
+    Category.findByIdAndRemove(req.params.id, function (err) {
+        if (err)
+            return console.log(err);
+
         Category.find(function (err, categories) {
             if (err) {
                 console.log(err);
@@ -180,11 +192,10 @@ router.get('/delete-category/:id', async function (req, res) {
                 req.app.locals.categories = categories;
             }
         });
-        req.flash('success', 'Category deleted!!!');
+
+        req.flash('success', 'Category deleted!');
         res.redirect('/admin/categories/');
-    } catch (err) {
-        console.log(err);
-    }
+    });
 });
 
 module.exports = router;

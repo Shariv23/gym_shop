@@ -1,18 +1,21 @@
 express = require('express');
 var router = express.Router();
+var auth = require('../config/auth');
+var isAdmin = auth.isAdmin;
+
 
 //Get page model
 var Page = require('../models/page');
 
-//get pages index
-
-router.get('/', async function (req, res) {
-
-    const pages = await Page.find({}).sort({ sorting: 1 }).exec();
-    res.render('admin/pages', {
-        pages: pages,
+/*
+ * GET pages index
+ */
+router.get('/', isAdmin, function (req, res) {
+    Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
+        res.render('admin/pages', {
+            pages: pages
+        });
     });
-
 });
 
 router.get('/', async function (req, res) {
@@ -38,8 +41,11 @@ router.get('/', async function (req, res) {
 //     res.send('admin area');
 // });
 
-//get add page
-router.get('/add-page', function (req, res) {
+/*
+ * GET add page
+ */
+router.get('/add-page', isAdmin, function (req, res) {
+
     var title = "";
     var slug = "";
     var content = "";
@@ -49,6 +55,7 @@ router.get('/add-page', function (req, res) {
         slug: slug,
         content: content
     });
+
 });
 
 
@@ -73,7 +80,7 @@ router.post('/add-page', function (req, res) {
             content: content
         });
     } else {
-        Page.findOne({slug: slug}, function (err, page) {
+        Page.findOne({ slug: slug }, function (err, page) {
             if (page) {
                 req.flash('danger', 'Page slug exists, choose another.');
                 res.render('admin/add_page', {
@@ -93,7 +100,7 @@ router.post('/add-page', function (req, res) {
                     if (err)
                         return console.log(err);
 
-                    Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
+                    Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
                         if (err) {
                             console.log(err);
                         } else {
@@ -162,7 +169,7 @@ router.post('/reorder-pages', function (req, res) {
     var ids = req.body['id[]'];
 
     sortPages(ids, function () {
-        Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
+        Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
             if (err) {
                 console.log(err);
             } else {
@@ -173,25 +180,26 @@ router.post('/reorder-pages', function (req, res) {
 
 });
 
+/*
+ * GET edit page
+ */
+router.get('/edit-page/:id', isAdmin, function (req, res) {
 
-
-//get edit page
-router.get('/edit-page/:id', async function (req, res) {
-    try {
-        const page = await Page.findById(req.params.id).exec();
+    Page.findById(req.params.id, function (err, page) {
+        if (err)
+            return console.log(err);
 
         res.render('admin/edit_page', {
             title: page.title,
             slug: page.slug,
             content: page.content,
-            id: page._id,
+            id: page._id
         });
-    } catch (err) {
-        console.log(err);
-    }
+    });
+
 });
-//exports
-module.exports = router;
+
+
 
 /*
  * POST edit page
@@ -219,7 +227,7 @@ router.post('/edit-page/:id', function (req, res) {
             id: id
         });
     } else {
-        Page.findOne({slug: slug, _id: {'$ne': id}}, function (err, page) {
+        Page.findOne({ slug: slug, _id: { '$ne': id } }, function (err, page) {
             if (page) {
                 req.flash('danger', 'Page slug exists, choose another.');
                 res.render('admin/edit_page', {
@@ -242,7 +250,7 @@ router.post('/edit-page/:id', function (req, res) {
                         if (err)
                             return console.log(err);
 
-                        Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
+                        Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
                             if (err) {
                                 console.log(err);
                             } else {
@@ -265,28 +273,25 @@ router.post('/edit-page/:id', function (req, res) {
 });
 
 
-//get delete index
+/*
+ * GET delete page
+ */
+router.get('/delete-page/:id', isAdmin, function (req, res) {
+    Page.findByIdAndRemove(req.params.id, function (err) {
+        if (err)
+            return console.log(err);
 
-router.get('/delete-page/:id', async function (req, res) {
-    try {
-        await Page.findByIdAndDelete(req.params.id);
-        req.flash('success', 'Page deleted!!!');
-
-        // Retrieve the updated pages after deletion
-        const updatedPages = await Page.find({}).sort({ sorting: 1 }).exec();
-        req.app.locals.pages = updatedPages;
-
-        res.redirect('/admin/pages/');
-    } catch (err) {
-        console.log(err);
-        Page.find({}).sort({sorting: 1}).exec(function (err, pages) {
+        Page.find({}).sort({ sorting: 1 }).exec(function (err, pages) {
             if (err) {
                 console.log(err);
             } else {
                 req.app.locals.pages = pages;
             }
         });
-    }
+
+        req.flash('success', 'Page deleted!');
+        res.redirect('/admin/pages/');
+    });
 });
 
 
