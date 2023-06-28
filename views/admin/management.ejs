@@ -1,0 +1,99 @@
+<%- include('../_layout/adminheader') %>
+
+    <div class="omer">
+        <h1 class="h">Purchases Graph</h1>
+
+        <div class="product-list">
+            <% products.forEach(function(product) { %>
+                <div class="product-item">
+                    <div class="product-name">
+                        <%= product.title %>
+                    </div>
+                    <div class="product-purchases">Purchases: <%= product.pursche %>
+                    </div>
+                </div>
+                <% }); %>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="chart" data-product-names="<%= JSON.stringify(products.map(product => product.title)) %>"
+                data-purchases-data="<%= JSON.stringify(products.map(product => product.pursche)) %>"></canvas>
+        </div>
+    </div>
+
+    <style>
+        .omer {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .h {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .product-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .product-item {
+            width: 48%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .product-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .product-purchases {
+            color: #888;
+        }
+
+        .chart-container {
+            text-align: center;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById("chart").getContext("2d");
+            const productNames = JSON.parse(document.getElementById("chart").getAttribute("data-product-names"));
+            const purchasesData = JSON.parse(document.getElementById("chart").getAttribute("data-purchases-data"));
+
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: productNames,
+                    datasets: [{
+                        label: "Purchases",
+                        data: purchasesData,
+                        backgroundColor: "rgba(75, 192, 192, 0.2)",
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        borderWidth: 1,
+                        barThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+    <%- include('../_layout/adminfooter') %>

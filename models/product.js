@@ -27,6 +27,11 @@ var ProductSchema = mongoose.Schema({
     image: {
         type: String,
 
+    },
+    pursche: {
+        type: Number,
+        required: true
+
     }
 });
 

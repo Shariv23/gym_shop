@@ -121,5 +121,28 @@ router.get('/logout', function (req, res) {
     });
 });
 
+/*
+ * GET find us 
+ */
+
+
+
+const path = require('path');
+
+router.get('/about', function (req, res) {
+
+
+    // if (res.locals.user) res.redirect('/');
+
+    res.render('find', {
+        title: 'Find us'
+    });
+
+});
+
+
+
+
+
 // Exports
 module.exports = router;

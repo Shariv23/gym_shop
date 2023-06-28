@@ -11,6 +11,9 @@ var Product = require('../models/product');
 /*
  * GET add product to cart
  */
+var cart;
+var productCart = [];
+var j = 0;
 router.get('/add/:product', function (req, res) {
 
     var slug = req.params.product;
@@ -28,18 +31,21 @@ router.get('/add/:product', function (req, res) {
                 image: '/product_images/' + p._id + '/' + p.image
             });
         } else {
-            var cart = req.session.cart;
+            cart = req.session.cart;
+
             var newItem = true;
 
             for (var i = 0; i < cart.length; i++) {
                 if (cart[i].title == slug) {
                     cart[i].qty++;
+
                     newItem = false;
                     break;
                 }
             }
 
             if (newItem) {
+
                 cart.push({
                     title: slug,
                     qty: 1,
@@ -48,8 +54,8 @@ router.get('/add/:product', function (req, res) {
                 });
             }
         }
-
-        console.log(req.session.cart);
+        j++;
+        productCart.push(req.session.cart[j - 1].title);
         req.flash('success', 'Product added!');
         res.redirect('back');
     });
@@ -129,14 +135,28 @@ router.get('/clear', function (req, res) {
 });
 
 //GET buy now
- 
-router.get('/buynow', function (req, res) {
+
+
+router.get('/buynow', async function (req, res) {
+
+    for (i = 0; i < productCart.length; i++) {
+
+        await Product.updateMany({ title: productCart }
+            , { $inc: { pursche: +1 } })
+
+    }
 
     delete req.session.cart;
-    
+
     res.sendStatus(200);
 
 });
+
+
+
+
+
+
 
 // Exports
 module.exports = router;

@@ -143,6 +143,7 @@ var adminProducts = require('./routes/admin_products.js');
 var products = require('./routes/products.js');
 var cart = require('./routes/cart.js');
 var users = require('./routes/users.js');
+var management = require('./routes/admin_managment');
 
 app.use('/products', products);
 app.use('/admin/pages', adminPages);
@@ -151,7 +152,7 @@ app.use('/admin/products', adminProducts);
 app.use('/', pages);
 app.use('/cart', cart);
 app.use('/users', users);
-
+app.use('/admin', management);
 
 // Start the server
 var port = 3000;

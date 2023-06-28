@@ -46,12 +46,13 @@ router.get('/add-product', async function (req, res) {
         var desc = "";
         var price = "";
         var categories = await Category.find();
-
+        var pursche = "";
         res.render('admin/add_product', {
             title: title,
             desc: desc,
             categories: categories,
-            price: price
+            price: price,
+            pursche: pursche
         });
     } catch (err) {
         console.log(err);
@@ -74,6 +75,7 @@ router.post('/add-product', function (req, res) {
     var desc = req.body.desc;
     var price = req.body.price;
     var category = req.body.category;
+    var pursche = req.body.pursche;
 
     var errors = req.validationErrors();
 
@@ -84,7 +86,8 @@ router.post('/add-product', function (req, res) {
                 title: title,
                 desc: desc,
                 categories: categories,
-                price: price
+                price: price,
+                pursche: pursche
             });
         });
     } else {
@@ -98,7 +101,8 @@ router.post('/add-product', function (req, res) {
                                 title: title,
                                 desc: desc,
                                 categories: categories,
-                                price: price
+                                price: price,
+                                pursche: pursche
                             });
                         })
                         .catch((err) => {
@@ -117,7 +121,8 @@ router.post('/add-product', function (req, res) {
                         desc: desc,
                         price: price2,
                         category: category,
-                        image: imageFile
+                        image: imageFile,
+                        pursche: pursche
                     });
 
                     product.save(function (err) {
@@ -420,24 +425,6 @@ router.get('/delete-product/:id', function (req, res) {
         }
     });
 
-});
-// get add product
-router.get('/add-product', async function (req, res) {
-    try {
-        var title = "";
-        var desc = "";
-        var price = "";
-        var categories = await Category.find();
-
-        res.render('admin/add_product', {
-            title: title,
-            desc: desc,
-            categories: categories,
-            price: price
-        });
-    } catch (err) {
-        console.log(err);
-    }
 });
 
 
